@@ -1,0 +1,7 @@
+numpy>=1.20
+scipy>=1.7
+matplotlib>=3.5
+
+# Optional — install with: pip install -e ".[web,test]"
+# streamlit>=1.20
+# pytest>=7.0
