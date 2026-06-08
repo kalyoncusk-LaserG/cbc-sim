@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HiPow Lazer Sistemi — Tasarım Çalışma Alanı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #f4f5f7;
+  --bg2:     #ffffff;
+  --bg3:     #f0f1f4;
+  --bg4:     #e8eaee;
+  --border:  rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.15);
+  --text:    #1a1c22;
+  --text2:   #5a5f6e;
+  --text3:   #9097a8;
+  --mono:    'DM Mono', monospace;
+  --sans:    'Syne', sans-serif;
+
+  --nlss:    #5548c8;  --nlss-bg: rgba(85,72,200,0.08);  --nlss-dim: rgba(85,72,200,0.2);
+  --nlfa:    #0d8f64;  --nlfa-bg: rgba(13,143,100,0.08); --nlfa-dim: rgba(13,143,100,0.2);
+  --sbc:     #1a6fc4;  --sbc-bg:  rgba(26,111,196,0.08); --sbc-dim:  rgba(26,111,196,0.2);
+  --cbc:     #c4521a;  --cbc-bg:  rgba(196,82,26,0.08);  --cbc-dim:  rgba(196,82,26,0.2);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;font-size:14px}
+
+/* HEADER */
+.header{display:flex;align-items:center;gap:16px;padding:12px 24px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.header-logo{font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text)}
+.header-sep{width:1px;height:18px;background:var(--border2)}
+.header-title{font-size:13px;color:var(--text2);font-family:var(--mono)}
+.save-badge{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--text3)}
+.save-dot{width:6px;height:6px;border-radius:50%;background:#0d8f64;transition:background .3s}
+.save-dot.saving{background:#c4941a}
+
+/* LAYOUT */
+.app-body{display:flex;flex:1;overflow:hidden;height:calc(100vh - 49px)}
+
+/* SIDEBAR */
+.sidebar{width:210px;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;overflow-y:auto}
+.sidebar-section{padding:16px 12px 8px}
+.sidebar-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:600;padding:0 6px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s;border:1px solid transparent;margin-bottom:2px;text-align:left;background:none;width:100%}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+.nav-item[data-mod="NLSS"].active{border-left:3px solid var(--nlss)}
+.nav-item[data-mod="NLFA"].active{border-left:3px solid var(--nlfa)}
+.nav-item[data-mod="SBC"].active{border-left:3px solid var(--sbc)}
+.nav-item[data-mod="CBC"].active{border-left:3px solid var(--cbc)}
+.nav-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.nav-item[data-mod="home"] .nav-dot{background:var(--text3)}
+.nav-item[data-mod="NLSS"] .nav-dot{background:var(--nlss)}
+.nav-item[data-mod="NLFA"] .nav-dot{background:var(--nlfa)}
+.nav-item[data-mod="SBC"]  .nav-dot{background:var(--sbc)}
+.nav-item[data-mod="CBC"]  .nav-dot{background:var(--cbc)}
+.nav-stats{margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--text3)}
+.sidebar-compat{margin-top:auto;padding:14px 12px;border-top:1px solid var(--border)}
+.compat-title{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:8px}
+.compat-item{font-size:11px;color:var(--text3);font-family:var(--mono);padding:5px 0;border-top:1px solid var(--border);line-height:1.5}
+.compat-item:first-of-type{border-top:none}
+.compat-mod{color:var(--text2)}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:18px}
+
+/* PANEL */
+.panel{display:none;flex-direction:column;gap:16px}
+.panel.active{display:flex}
+.panel-header{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.mod-chip{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:4px;font-family:var(--mono)}
+.panel-name{font-size:18px;font-weight:600;color:var(--text)}
+.panel-ref{font-size:12px;color:var(--text3);font-family:var(--mono);margin-left:auto}
+
+/* SUB-TABS */
+.sub-tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:0}
+.sub-tab{padding:7px 14px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.sub-tab:hover{color:var(--text)}
+.sub-tab.active{color:var(--text);border-bottom-color:currentColor;font-weight:600}
+
+/* SUB PANELS */
+.sub-panel{display:none;flex-direction:column;gap:0}
+.sub-panel.active{display:flex}
+
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);background:var(--bg3)}
+.card-title{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--text2);font-weight:600;display:flex;align-items:center;gap:6px}
+.add-btn{font-size:11px;font-family:var(--mono);color:var(--text2);background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:3px 10px;cursor:pointer;transition:all .15s}
+.add-btn:hover{background:var(--bg4);color:var(--text)}
+
+/* SPEC TABLE */
+.spec-wrap{overflow-x:auto}
+table.spec{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.spec th{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);text-align:left;padding:8px 10px;font-weight:600;border-bottom:1px solid var(--border);background:var(--bg3);white-space:nowrap}
+.spec th:nth-child(1){width:10%}   /* GÖ No */
+.spec th:nth-child(2){width:30%}   /* Parametre */
+.spec th:nth-child(3){width:20%}   /* Değer */
+.spec th:nth-child(4){width:10%}   /* Birim */
+.spec th:nth-child(5){width:13%}   /* Durum */
+.spec th:nth-child(6){width:13%}   /* Doğrulama */
+.spec th:nth-child(7){width:4%}    /* Sil */
+.spec td{padding:0;border-top:1px solid var(--border);vertical-align:middle}
+.spec td input,.spec td select{width:100%;background:transparent;border:none;font-size:12px;color:var(--text);font-family:var(--sans);padding:6px 10px;outline:none;transition:background .15s}
+.spec td input:focus{background:var(--bg3)}
+.spec td select{color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer}
+.spec td select option{background:var(--bg2)}
+.spec-group td{background:var(--bg3);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);padding:5px 10px;border-top:1px solid var(--border2);pointer-events:none}
+.spec .del{background:none;border:none;cursor:pointer;color:var(--text3);padding:0 8px;font-size:15px;height:100%;transition:color .15s}
+.spec .del:hover{color:#c0392b}
+.td-act{display:flex;align-items:center}
+.td-act select{flex:1}
+
+/* NOTES */
+.notes-area{width:100%;min-height:200px;resize:vertical;font-size:13px;font-family:var(--mono);color:var(--text2);background:transparent;border:none;outline:none;line-height:1.8;padding:14px 16px}
+.notes-area::placeholder{color:var(--text3)}
+
+/* LOG */
+.log-header{display:grid;grid-template-columns:110px 1fr 1fr 26px;gap:8px;padding:0 12px 6px;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);font-weight:600}
+.log-entry{display:grid;grid-template-columns:110px 1fr 1fr 26px;gap:8px;padding:8px 12px;border-top:1px solid var(--border);align-items:start}
+.log-entry input,.log-entry textarea{background:transparent;border:none;font-size:12px;font-family:var(--mono);color:var(--text2);outline:none;resize:none;line-height:1.6;width:100%;transition:background .15s}
+.log-entry textarea{min-height:50px}
+.log-entry input:focus,.log-entry textarea:focus{background:var(--bg3);border-radius:3px;padding:2px 5px}
+.log-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding-top:4px;transition:color .15s}
+.log-del:hover{color:#c0392b}
+
+/* COMPONENT TABLE */
+table.comp{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.comp th{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);text-align:left;padding:8px 10px;font-weight:600;border-bottom:1px solid var(--border);background:var(--bg3);white-space:nowrap}
+.comp th:nth-child(1){width:20%}
+.comp th:nth-child(2){width:28%}
+.comp th:nth-child(3){width:22%}
+.comp th:nth-child(4){width:26%}
+.comp th:nth-child(5){width:4%}
+.comp td{padding:0;border-top:1px solid var(--border);vertical-align:middle}
+.comp td input{width:100%;background:transparent;border:none;font-size:12px;color:var(--text);font-family:var(--sans);padding:6px 10px;outline:none;transition:background .15s}
+.comp td input:focus{background:var(--bg3)}
+.comp .del{background:none;border:none;cursor:pointer;color:var(--text3);padding:0 8px;font-size:15px;height:100%;transition:color .15s}
+.comp .del:hover{color:#c0392b}
+.comp-group td{background:var(--bg3);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);padding:5px 10px;border-top:1px solid var(--border2);pointer-events:none}
+
+/* HOME */
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.home-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;cursor:pointer;transition:all .15s}
+.home-card:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.home-card-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+.home-card-sub{font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:12px}
+.home-stat{display:flex;justify-content:space-between;font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:3px}
+.home-stat span{color:var(--text2)}
+.compat-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.compat-card-header{padding:10px 14px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text2)}
+.compat-card-body{padding:12px 14px}
+.compat-row{display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--border);font-size:12px}
+.compat-row:first-child{border-top:none;padding-top:0}
+.compat-arr{color:var(--text3);flex-shrink:0}
+.compat-m{font-weight:600;min-width:140px;color:var(--text);flex-shrink:0}
+.compat-d{color:var(--text2)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">HiPow</div>
+  <div class="header-sep"></div>
+  <div class="header-title">Lazer Sistemi — Tasarım Çalışma Alanı</div>
+  <div class="save-badge">
+    <div class="save-dot" id="save-dot"></div>
+    <span id="save-status">Kaydedildi</span>
+  </div>
+</div>
+
+<div class="app-body">
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigasyon</div>
+      <button class="nav-item active" data-mod="home" onclick="switchMod('home')">
+        <span class="nav-dot"></span>Genel Bakış<span class="nav-stats"></span>
+      </button>
+      <button class="nav-item" data-mod="NLSS" onclick="switchMod('NLSS')">
+        <span class="nav-dot"></span>NLSS<span class="nav-stats" id="stat-NLSS">—</span>
+      </button>
+      <button class="nav-item" data-mod="NLFA" onclick="switchMod('NLFA')">
+        <span class="nav-dot"></span>NLFA<span class="nav-stats" id="stat-NLFA">—</span>
+      </button>
+      <button class="nav-item" data-mod="SBC" onclick="switchMod('SBC')">
+        <span class="nav-dot"></span>SBC<span class="nav-stats" id="stat-SBC">—</span>
+      </button>
+      <button class="nav-item" data-mod="CBC" onclick="switchMod('CBC')">
+        <span class="nav-dot"></span>CBC<span class="nav-stats" id="stat-CBC">—</span>
+      </button>
+    </div>
+    <div class="sidebar-compat">
+      <div class="compat-title">Modüller arası kısıtlar</div>
+      <div class="compat-item"><span class="compat-mod">NLSS → NLFA</span><br>Çizgi genişliği SBS eşiğini belirler</div>
+      <div class="compat-item"><span class="compat-mod">NLFA → SBC/CBC</span><br>Kanal dengesi &lt;0,1 dB</div>
+      <div class="compat-item"><span class="compat-mod">NLFA → CBC</span><br>Döngü BW faz gürültüsünü aşmalı</div>
+      <div class="compat-item"><span class="compat-mod">SBC ↔ NLFA</span><br>Izgara 1070±1 nm içinde olmalı</div>
+      <div class="compat-item"><span class="compat-mod">NLSS → CBC</span><br>Tüm kanallara tek tohum kaynak</div>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- HOME -->
+    <div id="panel-home" class="panel active">
+      <div class="panel-header">
+        <div class="panel-name">Sistem Genel Bakış</div>
+        <div class="panel-ref">GİZEM / AS023920</div>
+      </div>
+      <div class="home-grid">
+        <div class="home-card" onclick="switchMod('NLSS')">
+          <div style="margin-bottom:8px"><span class="mod-chip" style="background:var(--nlss-bg);color:var(--nlss)">NLSS</span></div>
+          <div class="home-card-name">Dar Bant Tohum Lazer Kaynağı</div>
+          <div class="home-card-sub">Tek frekanslı ana osilatör</div>
+          <div class="home-stat">Spec satırı <span id="h-nlss-s">0</span></div>
+          <div class="home-stat">Notlar <span id="h-nlss-n">0 karakter</span></div>
+          <div class="home-stat">Karar girişi <span id="h-nlss-l">0</span></div>
+        </div>
+        <div class="home-card" onclick="switchMod('NLFA')">
+          <div style="margin-bottom:8px"><span class="mod-chip" style="background:var(--nlfa-bg);color:var(--nlfa)">NLFA</span></div>
+          <div class="home-card-name">Dar Bant Fiber Yükselteç</div>
+          <div class="home-card-sub">Çok kademeli Yb-katkılı yükselteç zinciri</div>
+          <div class="home-stat">Spec satırı <span id="h-nlfa-s">0</span></div>
+          <div class="home-stat">Notlar <span id="h-nlfa-n">0 karakter</span></div>
+          <div class="home-stat">Karar girişi <span id="h-nlfa-l">0</span></div>
+        </div>
+        <div class="home-card" onclick="switchMod('SBC')">
+          <div style="margin-bottom:8px"><span class="mod-chip" style="background:var(--sbc-bg);color:var(--sbc)">SBC</span></div>
+          <div class="home-card-name">Spektral Hüzme Birleştirme</div>
+          <div class="home-card-sub">Dispersif çok kanallı birleştirme</div>
+          <div class="home-stat">Spec satırı <span id="h-sbc-s">0</span></div>
+          <div class="home-stat">Notlar <span id="h-sbc-n">0 karakter</span></div>
+          <div class="home-stat">Karar girişi <span id="h-sbc-l">0</span></div>
+        </div>
+        <div class="home-card" onclick="switchMod('CBC')">
+          <div style="margin-bottom:8px"><span class="mod-chip" style="background:var(--cbc-bg);color:var(--cbc)">CBC</span></div>
+          <div class="home-card-name">Eş Fazlı Hüzme Birleştirme</div>
+          <div class="home-card-sub">Aktif faz kilitlemeli eş fazlı birleştirme</div>
+          <div class="home-stat">Spec satırı <span id="h-cbc-s">0</span></div>
+          <div class="home-stat">Notlar <span id="h-cbc-n">0 karakter</span></div>
+          <div class="home-stat">Karar girişi <span id="h-cbc-l">0</span></div>
+        </div>
+      </div>
+      <div class="compat-card">
+        <div class="compat-card-header">Modüller Arası Uyumluluk Kısıtları</div>
+        <div class="compat-card-body">
+          <div class="compat-row"><span class="compat-arr">→</span><span class="compat-m">NLSS çizgi genişliği</span><span class="compat-d">NLFA'nın SBS eşik marjını belirler — birlikte optimize edilmeli</span></div>
+          <div class="compat-row"><span class="compat-arr">→</span><span class="compat-m">NLFA kanal dengesi</span><span class="compat-d">Güç dengesizliği SBC ve CBC birleşim verimini doğrudan etkiler (&lt;0,1 dB hedef)</span></div>
+          <div class="compat-row"><span class="compat-arr">→</span><span class="compat-m">CBC döngü band genişliği</span><span class="compat-d">NLFA faz gürültüsü bant genişliğini aşmalı — min ≥10 kHz (GÖ-28)</span></div>
+          <div class="compat-row"><span class="compat-arr">→</span><span class="compat-m">SBC kanal planı</span><span class="compat-d">Dalga boyu ızgarası Yb kazanım bandı içinde olmalı (1070±1 nm, GÖ-60)</span></div>
+          <div class="compat-row"><span class="compat-arr">→</span><span class="compat-m">Ortak tohum (NLSS)</span><span class="compat-d">CBC koheransı için tüm NLFA kanalları tek ana osilatörden beslenmeli</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODULE PANELS: NLSS / NLFA / SBC (empty shells) -->
+    <div id="panel-NLSS" class="panel"></div>
+    <div id="panel-NLFA" class="panel"></div>
+    <div id="panel-SBC"  class="panel"></div>
+    <div id="panel-CBC"  class="panel"></div>
+
+  </main>
+</div>
+
+<script>
+const MODS = ['NLSS','NLFA','SBC','CBC'];
+const STATUS_OPTS  = ['—','Belirsiz','Taslak','Onaylı','Kilitlendi'];
+const VERIF_OPTS   = ['—','Test','Analiz','Gösterim','İnceleme'];
+let saveTimer = null;
+const activeSubTab = {};
+
+// ── BUILD MODULE PANEL ──────────────────────────────────────────
+function buildPanel(mod) {
+  const panel = document.getElementById('panel-' + mod);
+  const color = `var(--${mod.toLowerCase()})`;
+  const colorBg = `var(--${mod.toLowerCase()}-bg)`;
+  const names = {NLSS:'Dar Bant Tohum Lazer Kaynağı', NLFA:'Dar Bant Fiber Yükselteç', SBC:'Spektral Hüzme Birleştirme', CBC:'Eş Fazlı Hüzme Birleştirme'};
+  const refs  = {CBC:'AS023920 Rev.+'};
+
+  panel.innerHTML = `
+    <div class="panel-header">
+      <span class="mod-chip" style="background:${colorBg};color:${color}">${mod}</span>
+      <div class="panel-name">${names[mod]}</div>
+      ${refs[mod] ? `<div class="panel-ref">${refs[mod]}</div>` : ''}
+    </div>
+    <div class="sub-tabs" id="subtabs-${mod}">
+      <button class="sub-tab active" onclick="switchSub('${mod}','spec')" style="border-bottom-color:${color}">Özellikler</button>
+      <button class="sub-tab" onclick="switchSub('${mod}','comp')">Bileşenler</button>
+      <button class="sub-tab" onclick="switchSub('${mod}','notes')">Notlar</button>
+      <button class="sub-tab" onclick="switchSub('${mod}','log')">Karar Günlüğü</button>
+    </div>
+
+    <!-- SPEC -->
+    <div id="sub-${mod}-spec" class="sub-panel active">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Gereksinim Özellikleri</span>
+          <button class="add-btn" onclick="addSpecRow('${mod}')">+ Parametre ekle</button>
+        </div>
+        <div class="spec-wrap">
+          <table class="spec">
+            <thead><tr><th>GÖ No</th><th>Parametre</th><th>Değer</th><th>Birim</th><th>Durum</th><th>Doğrulama</th><th></th></tr></thead>
+            <tbody id="spec-${mod}"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPONENTS -->
+    <div id="sub-${mod}-comp" class="sub-panel">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Gereksinimlerin Karşılanma Yöntemi — Bileşenler</span>
+          <button class="add-btn" onclick="addCompRow('${mod}')">+ Bileşen ekle</button>
+        </div>
+        <div class="spec-wrap">
+          <table class="comp">
+            <thead><tr><th>Alt Bileşen</th><th>Yöntem / Teknik</th><th>Firma / Model</th><th>Kısa Teknik Özellik</th><th></th></tr></thead>
+            <tbody id="comp-${mod}"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div id="sub-${mod}-notes" class="sub-panel">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Notlar</span></div>
+        <textarea class="notes-area" id="notes-${mod}" placeholder="Serbest notlar, takas analizi, referanslar, denklemler, bağlantılar…" oninput="queueSave('${mod}')"></textarea>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div id="sub-${mod}-log" class="sub-panel">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Tasarım Karar Günlüğü</span>
+          <button class="add-btn" onclick="addLogEntry('${mod}')">+ Giriş ekle</button>
+        </div>
+        <div style="padding:8px 0 4px">
+          <div class="log-header"><span>Tarih</span><span>Karar</span><span>Gerekçe</span><span></span></div>
+          <div id="log-${mod}"></div>
+        </div>
+      </div>
+    </div>`;
+
+  activeSubTab[mod] = 'spec';
+}
+
+// ── SUB TAB SWITCH ──────────────────────────────────────────────
+function switchSub(mod, tab) {
+  activeSubTab[mod] = tab;
+  document.querySelectorAll(`#subtabs-${mod} .sub-tab`).forEach((b,i) => {
+    const tabs = ['spec','comp','notes','log'];
+    const isActive = tabs[i] === tab;
+    b.classList.toggle('active', isActive);
+    const color = getComputedStyle(document.documentElement).getPropertyValue(`--${mod.toLowerCase()}`).trim();
+    b.style.borderBottomColor = isActive ? `var(--${mod.toLowerCase()})` : 'transparent';
+    b.style.color = isActive ? `var(--${mod.toLowerCase()})` : '';
+  });
+  ['spec','comp','notes','log'].forEach(t => {
+    const el = document.getElementById(`sub-${mod}-${t}`);
+    if(el) el.classList.toggle('active', t === tab);
+  });
+}
+
+// ── MOD SWITCH ─────────────────────────────────────────────────
+function switchMod(mod) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.mod === mod));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + mod));
+}
+
+// ── SPEC ROW ───────────────────────────────────────────────────
+function addSpecRow(mod, data) {
+  if (data && data.group !== undefined) {
+    const tr = document.createElement('tr');
+    tr.className = 'spec-group';
+    tr.innerHTML = `<td colspan="7">${data.group}</td>`;
+    document.getElementById('spec-'+mod).appendChild(tr);
+    return;
+  }
+  const tr = document.createElement('tr');
+  const st = data?.status || '—';
+  const vr = data?.verif  || '—';
+  tr.innerHTML = `
+    <td><input type="text" placeholder="GÖ-" value="${esc(data?.go||'')}" oninput="queueSave('${mod}')"></td>
+    <td><input type="text" placeholder="Parametre adı" value="${esc(data?.param||'')}" oninput="queueSave('${mod}')"></td>
+    <td><input type="text" placeholder="—" value="${esc(data?.val||'')}" oninput="queueSave('${mod}')"></td>
+    <td><input type="text" placeholder="—" value="${esc(data?.unit||'')}" oninput="queueSave('${mod}')"></td>
+    <td><select onchange="queueSave('${mod}')">${STATUS_OPTS.map(s=>`<option${s===st?' selected':''}>${s}</option>`).join('')}</select></td>
+    <td><select onchange="queueSave('${mod}')">${VERIF_OPTS.map(s=>`<option${s===vr?' selected':''}>${s}</option>`).join('')}</select></td>
+    <td class="td-act"><button class="del" onclick="this.closest('tr').remove();queueSave('${mod}')">×</button></td>`;
+  document.getElementById('spec-'+mod).appendChild(tr);
+  updateStats();
+}
+
+// ── COMPONENT ROW ──────────────────────────────────────────────
+function addCompRow(mod, data) {
+  if (data && data.group !== undefined) {
+    const tr = document.createElement('tr');
+    tr.className = 'comp-group';
+    tr.innerHTML = `<td colspan="5">${data.group}</td>`;
+    document.getElementById('comp-'+mod).appendChild(tr);
+    return;
+  }
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" placeholder="Alt bileşen" value="${esc(data?.comp||'')}" oninput="queueSave('${mod}')"></td>
+    <td><input type="text" placeholder="Yöntem / teknik açıklama" value="${esc(data?.method||'')}" oninput="queueSave('${mod}')"></td>
+    <td><input type="text" placeholder="Firma / Model" value="${esc(data?.model||'')}" oninput="queueSave('${mod}')"></td>
+    <td><input type="text" placeholder="Kısa teknik özellik" value="${esc(data?.spec||'')}" oninput="queueSave('${mod}')"></td>
+    <td><button class="del" style="font-size:15px;padding:0 8px;background:none;border:none;cursor:pointer;color:var(--text3)" onclick="this.closest('tr').remove();queueSave('${mod}')">×</button></td>`;
+  document.getElementById('comp-'+mod).appendChild(tr);
+  updateStats();
+}
+
+// ── LOG ENTRY ──────────────────────────────────────────────────
+function addLogEntry(mod, data) {
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  const today = data?.date || new Date().toISOString().slice(0,10);
+  div.innerHTML = `
+    <input type="date" value="${today}" oninput="queueSave('${mod}')">
+    <textarea placeholder="Ne karar verildi…" oninput="queueSave('${mod}')">${data?.decision||''}</textarea>
+    <textarea placeholder="Neden — alternatifler, kısıtlar, referanslar…" oninput="queueSave('${mod}')">${data?.rationale||''}</textarea>
+    <button class="log-del" onclick="this.closest('.log-entry').remove();queueSave('${mod}')">×</button>`;
+  document.getElementById('log-'+mod).appendChild(div);
+  updateStats();
+}
+
+// ── SAVE / LOAD ────────────────────────────────────────────────
+function queueSave(mod) {
+  updateStats();
+  document.getElementById('save-status').textContent = 'Kaydediliyor…';
+  document.getElementById('save-dot').classList.add('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persistAll, 900);
+}
+
+function persistAll() {
+  for (const mod of MODS) {
+    const specs = [];
+    document.querySelectorAll(`#spec-${mod} tr`).forEach(tr => {
+      if (tr.classList.contains('spec-group')) { specs.push({group:tr.querySelector('td').textContent}); return; }
+      const i = tr.querySelectorAll('input,select');
+      if (i.length >= 6) specs.push({go:i[0].value,param:i[1].value,val:i[2].value,unit:i[3].value,status:i[4].value,verif:i[5].value});
+    });
+    const comps = [];
+    document.querySelectorAll(`#comp-${mod} tr`).forEach(tr => {
+      if (tr.classList.contains('comp-group')) { comps.push({group:tr.querySelector('td').textContent}); return; }
+      const i = tr.querySelectorAll('input');
+      if (i.length >= 4) comps.push({comp:i[0].value,method:i[1].value,model:i[2].value,spec:i[3].value});
+    });
+    const logs = [];
+    document.querySelectorAll(`#log-${mod} .log-entry`).forEach(e => {
+      const els = e.querySelectorAll('input,textarea');
+      if (els.length >= 3) logs.push({date:els[0].value,decision:els[1].value,rationale:els[2].value});
+    });
+    const notes = document.getElementById('notes-'+mod)?.value||'';
+    localStorage.setItem('hipow3_'+mod, JSON.stringify({specs,comps,logs,notes}));
+  }
+  document.getElementById('save-status').textContent = 'Kaydedildi';
+  document.getElementById('save-dot').classList.remove('saving');
+}
+
+function loadAll() {
+  const hasSaved = MODS.some(m => localStorage.getItem('hipow3_'+m));
+  for (const mod of MODS) {
+    const raw = localStorage.getItem('hipow3_'+mod);
+    if (!raw) continue;
+    try {
+      const d = JSON.parse(raw);
+      (d.specs||[]).forEach(s => s.group!==undefined ? addSpecRow(mod,{group:s.group}) : addSpecRow(mod,s));
+      (d.comps||[]).forEach(c => c.group!==undefined ? addCompRow(mod,{group:c.group}) : addCompRow(mod,c));
+      (d.logs||[]).forEach(l => addLogEntry(mod,l));
+      const ta = document.getElementById('notes-'+mod);
+      if(ta && d.notes) ta.value = d.notes;
+    } catch(e){}
+  }
+  if (!hasSaved) loadCBCDefaults();
+  updateStats();
+}
+
+// ── STATS ──────────────────────────────────────────────────────
+function updateStats() {
+  const map = {NLSS:['h-nlss-s','h-nlss-n','h-nlss-l'], NLFA:['h-nlfa-s','h-nlfa-n','h-nlfa-l'], SBC:['h-sbc-s','h-sbc-n','h-sbc-l'], CBC:['h-cbc-s','h-cbc-n','h-cbc-l']};
+  MODS.forEach(mod => {
+    const [sid,nid,lid] = map[mod];
+    const sc = document.querySelectorAll(`#spec-${mod} tr:not(.spec-group)`).length;
+    const nc = (document.getElementById('notes-'+mod)?.value||'').length;
+    const lc = document.querySelectorAll(`#log-${mod} .log-entry`).length;
+    const s=document.getElementById(sid); if(s) s.textContent=sc;
+    const n=document.getElementById(nid); if(n) n.textContent=nc+' karakter';
+    const l=document.getElementById(lid); if(l) l.textContent=lc;
+    const st=document.getElementById('stat-'+mod); if(st) st.textContent=sc+'s/'+lc+'k';
+  });
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+
+// ── CBC DEFAULTS ───────────────────────────────────────────────
+function loadCBCDefaults() {
+  // SPECS
+  [
+    {group:'Işın Kalitesi'},
+    {go:'CBC-R-01 / GÖ-21', param:'Işın kalitesi (M²)',               val:'≤ 1,5',            unit:'—',      status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-02 / GÖ-22', param:'Strehl Oranı',                     val:'≥ 0,9 (hedef)',    unit:'—',      status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-23',            param:'Işın kalitesi ölçüm standardı',    val:'ISO 11146',         unit:'—',      status:'Onaylı',    verif:'Test'},
+    {group:'Performans'},
+    {go:'CBC-R-03 / GÖ-19', param:'Birleşik optik çıkış gücü',        val:'> 50.000',          unit:'W',      status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-04 / GÖ-17', param:'Optik çıkış açıklığı',             val:'≤ 100',             unit:'mm',     status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-05 / GÖ-37', param:'Faz kilitleme hassasiyeti',         val:'λ/20',              unit:'—',      status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-06 / GÖ-39', param:'Birleşim verimi',                   val:'≥ 95',              unit:'%',      status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-07 / GÖ-47', param:'Lazer açılış gecikmesi',            val:'≤ 1',               unit:'ms',     status:'Onaylı',    verif:'Test'},
+    {group:'Mimari'},
+    {go:'GÖ-15',            param:'Birleştirme topolojisi',            val:'Tiled Aperture',    unit:'—',      status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-24',            param:'Faz kilitleme yöntemi',             val:'Geliştirilen algoritma',unit:'—',  status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-25',            param:'Faz kilitleme mimarisi',            val:'LOCSET veya SPGD',  unit:'—',      status:'Belirsiz',  verif:'Test'},
+    {go:'GÖ-38',            param:'Üst sistem desteği',                val:'50 kW mimarisini destekler',unit:'—',status:'Onaylı', verif:'Analiz'},
+    {go:'GÖ-60',            param:'Merkez dalga boyu (ön yükselteç)',  val:'1070 ± 1',          unit:'nm',     status:'Onaylı',    verif:'Test'},
+    {group:'Faz Kilitleme — Kararlılık'},
+    {go:'GÖ-26',            param:'Sürekli çalışma süresi',            val:'≥ 1',               unit:'saat',   status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-26',            param:'Güç dalgalanması (RMS)',            val:'≤ 1',               unit:'%',      status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-26',            param:'Kilitleme tutma olasılığı',         val:'≥ 99,9',            unit:'%',      status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-26',            param:'Bozulma sonrası toparlanma',        val:'≤ 2',               unit:'ms',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-26',            param:'Termal sürüklenme',                 val:'≤ λ/100',           unit:'/°C',    status:'Onaylı',    verif:'Test'},
+    {group:'Faz Kilitleme — Hassasiyet'},
+    {go:'GÖ-27',            param:'Artık faz RMS hatası',              val:'≤ λ/200',           unit:'—',      status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-27',            param:'Faz kestirim hatası',               val:'≤ λ/300',           unit:'—',      status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-27',            param:'Faz jitter',                        val:'≤ 50',              unit:'mrad',   status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-27',            param:'Kilitleme süresi',                  val:'≤ 1',               unit:'ms',     status:'Onaylı',    verif:'Test'},
+    {group:'Faz Kilitleme — Kontrol Döngüsü'},
+    {go:'GÖ-28',            param:'Kontrol bant genişliği',            val:'≥ 10',              unit:'kHz',    status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-28',            param:'Faz-döngü gecikmesi',               val:'≤ 5',               unit:'µs',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-28',            param:'Yeniden faz kilitleme süresi',      val:'≤ 2',               unit:'ms',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-28',            param:'Algoritma kararlılığı',             val:'≥ 98',              unit:'%',      status:'Onaylı',    verif:'Test'},
+    {group:'Birleşim Performansı'},
+    {go:'GÖ-29',            param:'Birleştirme verimi',                val:'≥ 98',              unit:'%',      status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-29',            param:'Kanal çapraz konuşması',            val:'≤ −30',             unit:'dB',     status:'Onaylı',    verif:'Test'},
+    {group:'SNR ve Dedektör'},
+    {go:'GÖ-30',            param:'Optik SNR',                         val:'≥ 50',              unit:'dB',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-30',            param:'Elektrik SNR',                      val:'≥ 40',              unit:'dB',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-30',            param:'RIN',                               val:'≤ −140',            unit:'dBc/Hz', status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-30',            param:'NEP',                               val:'≤ 1×10⁻¹²',        unit:'W/√Hz',  status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-74 / CBC-R-21', param:'Fotodedektör bant genişliği',       val:'≥ 1',               unit:'GHz',    status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-76 / CBC-R-22', param:'Fotodedektör tepki süresi',         val:'≤ 100',             unit:'ps',     status:'Onaylı',    verif:'Test'},
+    {group:'Frekans Etiketleme (LOCSET)'},
+    {go:'GÖ-31',            param:'Frekans ayrımı',                    val:'≥ 10×BW',           unit:'—',      status:'Belirsiz',  verif:'Test'},
+    {go:'GÖ-31',            param:'Harmonik bastırma',                 val:'≤ −35',             unit:'dB',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-31',            param:'Çapraz konuşma bağışıklığı',        val:'≤ −30',             unit:'dB',     status:'Onaylı',    verif:'Test'},
+    {group:'Elektronik ve Dijital'},
+    {go:'GÖ-32',            param:'ADC çözünürlüğü',                   val:'≥ 16',              unit:'bit',    status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-32',            param:'DAC çözünürlüğü',                   val:'≥ 16',              unit:'bit',    status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-32',            param:'Örnekleme oranı',                   val:'≥ 10',              unit:'MS/s',   status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-32',            param:'Dijital döngü gecikmesi',           val:'≤ 5',               unit:'µs',     status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-23 / GÖ-79', param:'Kontrol çözünürlüğü (FPGA)',        val:'ps mertebesi',      unit:'—',      status:'Onaylı',    verif:'Gösterim'},
+    {group:'Fiber ve Optik Yol'},
+    {go:'GÖ-33',            param:'Polarizasyon kayması',              val:'≤ λ/50',            unit:'—',      status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-33',            param:'Fiber termal hassasiyeti',          val:'≤ λ/100',           unit:'/°C',    status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-33',            param:'Geri yansıma izolasyonu',           val:'≥ 40',              unit:'dB',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-54 / CBC-R-18', param:'Fiber bölücü PER',                  val:'≥ 25 (tip. 30)',    unit:'dB',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-59',            param:'Ön yükselteç PER',                  val:'≥ 25',              unit:'dB',     status:'Onaylı',    verif:'Test'},
+    {group:'Polarizasyon Optiği'},
+    {go:'CBC-R-08 / GÖ-41', param:'Polarizasyon yönü sapması',         val:'≤ 0,5',             unit:'°',      status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-09 / GÖ-42', param:'Polarizasyon Sönümleme Oranı (PER)',val:'≥ 30',             unit:'dB',     status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-10 / GÖ-43', param:'Polarizasyon eksen kararlılığı',    val:'≤ 0,5',             unit:'°/saat', status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-11 / GÖ-67', param:'Polarizasyon elektroniği cevap süresi', val:'≤ 10',         unit:'µs',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-70',            param:'Polarizasyona bağlı sinyal kaybı',  val:'≤ 0,15',            unit:'dB',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-71',            param:'Polarizasyon mod dispersiyonu',     val:'≤ 0,5',             unit:'ps',     status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-12 / GÖ-69', param:'Modülasyon oranı (sinüsoidal)',      val:'DC – 130',          unit:'kHz',    status:'Onaylı',    verif:'Test'},
+    {group:'Optik Geciktirme Hattı'},
+    {go:'CBC-R-13 / GÖ-50', param:'Geciktirme aralığı',                val:'0 – 600',           unit:'ps',     status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-14',         param:'Geciktirme çözünürlüğü',            val:'1',                 unit:'fs',     status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-15 / GÖ-52', param:'EOM geçiş süresi (%20–%80)',        val:'≥ 8',               unit:'ns',     status:'Onaylı',    verif:'Test'},
+    {group:'RF Sürücü'},
+    {go:'CBC-R-20 / GÖ-63', param:'RF sürücü kazancı (DC & RF)',       val:'≥ 25',              unit:'dB',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-64',            param:'RF sürücü çalışma sıcaklığı',       val:'25 ± 10',           unit:'°C',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-65',            param:'RF giriş voltajı',                  val:'110 mVpp (maks 10 Vpp)',unit:'—',  status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-65',            param:'DC giriş voltajı',                  val:'±250 mV (maks ±1 V)',unit:'—',    status:'Onaylı',    verif:'Test'},
+    {group:'Uzun Dönem Kararlılık'},
+    {go:'GÖ-34',            param:'Uzun dönem girişim kararlılığı',    val:'≤ λ/400',           unit:'/saat',  status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-34',            param:'Yeniden kilitleme güvenilirliği',   val:'≥ 99',              unit:'%',      status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-34',            param:'Çevresel sıcaklık toleransı',       val:'± 2',               unit:'°C',     status:'Onaylı',    verif:'Test'},
+    {group:'Sağlamlık (Bozma Testleri)'},
+    {go:'GÖ-35',            param:'Faz gürültüsü enjeksiyonu toleransı',val:'± π',              unit:'rad',    status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-35',            param:'Kanal kaybı toleransı',             val:'2 kanal devre dışı',unit:'—',     status:'Onaylı',    verif:'Test'},
+    {go:'GÖ-35',            param:'SNR düşürme toleransı',             val:'20 dB düşüş',       unit:'—',      status:'Onaylı',    verif:'Test'},
+    {group:'Yazılım'},
+    {go:'CBC-R-25 / GÖ-87', param:'Faz kilitleme algoritması',         val:'FPGA içinde',       unit:'—',      status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-26 / GÖ-88', param:'GUI — tüm sistem parametreleri',    val:'Tek arayüz',        unit:'—',      status:'Onaylı',    verif:'Test'},
+    {group:'Çevresel'},
+    {go:'CBC-R-27',         param:'EMC standardı',                     val:'MIL-STD-461G',      unit:'—',      status:'Onaylı',    verif:'Test'},
+    {go:'CBC-R-28',         param:'Çevresel koşullar',                 val:'MIL-STD-810G/H',    unit:'—',      status:'Onaylı',    verif:'Test'},
+  ].forEach(s => addSpecRow('CBC', s));
+
+  // COMPONENTS
+  [
+    {group:'Optik Kaynak'},
+    {comp:'Tohum Lazer + Sürücü', method:'DFB + EOM + RF sürücü kombinasyonu ile geniş bantlı dar çizgi kaynak', model:'Eblana EP1064 + Thorlabs EOM', spec:'BW > 20 GHz, Pout > 10 mW'},
+    {comp:'Elektro-Optik Modülatör', method:'Hızlı faz kontrolü için LiNbO3 EOM', model:'eXail NIR-MPX800', spec:'BW = 200 MHz, yükseliş < 8 ns'},
+    {comp:'RF Amplifikatör', method:'Geniş bant RF kazancı için MMIC tabanlı modül', model:'Mini-Circuits ZVE-3W183+', spec:'Kazanç ≥ 25 dB, 1–18 GHz'},
+    {group:'Işın Dağıtım ve Geciktirme'},
+    {comp:'Fiber Bölücüler', method:'PM fiberli 1×N yapı, düşük kayıplı, geniş bantlı', model:'Lightel PMDW1064 serisi', spec:'PER > 25 dB, IL < 0,8 dB'},
+    {comp:'Geciktirme Hatları', method:'PM fiber delay line, piezo/motor kontrollü', model:'OZ Optics DL-PM-600', spec:'0–600 ps, çözünürlük < 1 fs'},
+    {group:'Yükseltme'},
+    {comp:'Güç Yükselteçleri', method:'Çok kademeli MOPA mimarisi', model:'nLight Yb800-22/400', spec:'> 1 kW/kanal, λ=1064 nm, SM çıkış'},
+    {group:'Birleştirme Optiği'},
+    {comp:'Difraktif Optik Eleman (DOE)', method:'Yüksek verimli beam combiner, CBC için özel imal', model:'HOLO/OR Custom CBC Optik', spec:'Verim > %95, λ=1064 nm optimized'},
+    {group:'Faz Algılama ve Kontrol'},
+    {comp:'Fotodedektör', method:'GHz sınıfı, düşük jitter, lineer tepkili, fiber kuplajlı', model:'Thorlabs DET10A2', spec:'Yükseliş < 100 ps, BW ≥ 1 GHz'},
+    {comp:'Kontrol Ünitesi (FPGA+DSP)', method:'Tüm faz kilitleme ve zamanlama algoritmaları tek platform', model:'Xilinx Zynq-7000 (aday)', spec:'ARM + FPGA, SPGD/LOCSET, AI desteği'},
+    {comp:'Polarizasyon Elektroniği', method:'Otomatik faz algılama ve ayarlama, FPGA RT kontrol', model:'Geliştirilecek', spec:'Cevap ≤ 10 µs, DC–130 kHz'},
+    {group:'Yazılım ve Arayüz'},
+    {comp:'GUI', method:'Tüm sistem parametreleri yazılımsal izleme ve loglama', model:'Qt tabanlı yazılım', spec:'Gerçek zamanlı monitör, parametre ayarı'},
+    {group:'Güç ve Soğutma'},
+    {comp:'Güç Kaynakları', method:'Tüm modüller için izole DC güç kaynakları', model:'TDK Lambda Genesys', spec:'24–48 VDC, akım sınırlama'},
+    {comp:'Soğutma Sistemi', method:'Entegre su soğutmalı modüler chiller, tüm modüllerle uyumlu', model:'S&A CW-6200', spec:'5 kW soğutma kapasitesi'},
+  ].forEach(c => addCompRow('CBC', c));
+
+  // NOTES
+  document.getElementById('notes-CBC').value =
+`KAYNAK DOKÜMANLAR
+  [1] AS023920 — Eş Fazlı Hüzme Birleştirici Geliştirme İP - TİD, Rev.+  (güncel, esas alınan)
+  [2] G-Project SRR — Gereksinim Özet Dokümanı (eski, referans)
+  Proje kodu: GİZEM
+  Yönetimsel standart: MIL-STD-810G/H (çevresel), MIL-STD-461G (EMC)
+
+MİMARİ ÖZET
+  EHB birimi, doğrudan tehdit imhası amacıyla > 50 kW birleşik lazer çıkışı hedeflemektedir.
+  Faz kilitleme motoru (LOCSET veya SPGD — TBD) FPGA+DSP kontrol kartında ps-çözünürlüklü
+  zamanlama yeteneğiyle çalışacaktır. Tüm faz aktüatörleri toplam ≤ 5 µs gecikme içinde
+  döngüyü kapatmalıdır.
+
+AÇIK MADDELER
+  - Faz kilitleme mimarisi: LOCSET vs SPGD (GÖ-25) — PDR öncesi trade study gerekli
+  - NLFA kanal sayısı N: bu belgede sabit değil; 50 kW güç bütçesinden türetilecek
+  - Geciktirme çözünürlüğü: SRR = 1 fs (CBC-R-14) | AS023920 = TBD (GÖ-57) — SRR esas alındı
+  - Frekans etiketleme ayrımı (GÖ-31): "≥ 10×BW" — mutlak değer N ve kanal BW'ye bağlı
+  - Kontrol kartı: SRR = Xilinx Zynq-7000 (aday) | AS023920 = FPGA+DSP genel tanım
+
+SRR ile AS023920 ÇELİŞKİLERİ
+  - Geciktirme çözünürlüğü: SRR = 1 fs  |  AS023920 = belirtilmemiş → SRR esas alındı
+  - Faz kilitleme: SRR = SPGD  |  AS023920 = LOCSET veya SPGD → trade study TBD
+  - Kontrol kartı modeli: SRR = Zynq-7000  |  AS023920 = tanımsız → Zynq aday model
+
+SİSTEM ENTEGRASYON NOTLARI
+  - Tüm NLFA kanalları tek bir NLSS tohum kaynağından beslenmelidir
+  - Ön yükselteç dalgaboyu 1070±1 nm → NLSS ve NLFA tahsisini kısıtlar
+  - FPGA kartı AI/ML algoritmaları koşturabilmeli (GÖ-79)
+  - Tek GUI: sıcaklık, basınç, nem, titreşim, polarizasyon, modülasyon, geciktirme (GÖ-88)
+  - Termal yönetim: blok + chiller, tüm ısıl yüklü bileşenler kapsanmalı (GÖ-84)`;
+
+  // LOG
+  [
+    {date:'2026-06-05', decision:'Tiled Aperture topolojisi seçildi', rationale:'GÖ-15 zorunlu kılmaktadır. Bağımsız kanal erişimi sağlar; yüksek kanal sayısına ölçeklenir.'},
+    {date:'2026-06-05', decision:'Faz kilitleme: LOCSET veya SPGD — trade study gerekli', rationale:'GÖ-25. SRR SPGD önerir; LOCSET tek dedektörle ölçeklenebilir. Yüksek bozunum altında SPGD avantajlı. PDR öncesi karar verilmeli.'},
+    {date:'2026-06-05', decision:'Kontrol kartı: FPGA+DSP, AI desteği zorunlu — Xilinx Zynq-7000 aday', rationale:'GÖ-79 açık gereksinim. SRR Zynq öneriyor. Saf DSP/MCU mimarilerini dışlar.'},
+    {date:'2026-06-05', decision:'ADC/DAC: ≥16 bit, ≥10 MS/s — kilitlendi', rationale:'GÖ-32 kesin gereksinim. Bileşen seçimi ve kart yerleşim kısıtlarını belirler.'},
+    {date:'2026-06-05', decision:'Fotodedektör: fiber kuplajlı, ≥1 GHz BW — Thorlabs DET10A2 aday', rationale:'GÖ-74, GÖ-77. Fiber kuplajlı form serbest uzay hizalama DOF larını ortadan kaldırır. DET10A2 yükseliş < 100 ps.'},
+    {date:'2026-06-05', decision:'PER kademeli bütçe: ≥30 dB çıkış / ≥25 dB bölücüler ve ön yükselteç', rationale:'GÖ-42 (sistem), GÖ-54 (bölücüler), GÖ-59 (ön yükselteç). En sıkı kısıt çıkış açıklığında. SRR Lightel PMDW1064 öneriyor.'},
+    {date:'2026-06-05', decision:'Geciktirme çözünürlüğü: SRR değeri 1 fs esas alındı', rationale:'SRR CBC-R-14 = 1 fs. AS023920 GÖ-57 = TBD. AS023920 güncellenene kadar SRR değeri geçerli. OZ Optics DL-PM-600 aday.'},
+    {date:'2026-06-05', decision:'Soğutma: blok + chiller (S&A CW-6200, 5 kW)', rationale:'GÖ-84 tüm ısıl yüklü bileşenler için aktif soğutma zorunlu. 50 kW sistem için 5 kW soğutma kapasitesi minimum.'},
+    {date:'2026-06-05', decision:'DOE bileşeni: HOLO/OR Custom özel imal', rationale:'GÖ-39 ≥%95 birleşim verimi. HOLO/OR Custom CBC Optik aday. Özel imal gerektirir — temin süresi kritik yol üzerinde.'},
+  ].forEach(l => addLogEntry('CBC', l));
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+MODS.forEach(buildPanel);
+loadAll();
+</script>
+</body>
+</html>
